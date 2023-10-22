@@ -43,17 +43,20 @@ class Interpreter(InterpreterBase):
 			self.do_assignment(statement_node)
 		elif statement_node.elem_type == InterpreterBase.FCALL_DEF:
 			return self.do_function_call(statement_node)
-		else:
-			super().error(ErrorType.TYPE_ERROR, "Unknown statement type: {}".format(statement_node.elem_type))
+		#else:
+			#super().error(ErrorType.TYPE_ERROR, "Unknown statement type: {}".format(statement_node.elem_type))
 
 	def do_assignment(self, statement_node):
 		var_name = statement_node.get("name")
-		if not var_name[0].isalpha() and var_name[0] != "_" or not all(c.isalnum() or c == "_" for c in var_name):
-			super().error(ErrorType.NAME_ERROR, f"Invalid variable name: {var_name}")
+		# if not var_name[0].isalpha() and var_name[0] != "_" or not all(c.isalnum() or c == "_" for c in var_name):
+		# 	super().error(ErrorType.NAME_ERROR, f"Invalid variable name: {var_name}")
 		if self.trace_output:
-			print("Assigning statement to variable: {} = {}".format(statement_node.get("name"), statement_node.get("expression")))
-		expression_node = statement_node.get("expression")
-		self.variables[var_name] = self.evaluate_expression(expression_node)
+			print("Assigning statement to variable: {} = {}".format(var_name, statement_node.get("expression")))
+		val = self.evaluate_expression(statement_node.get("expression"))
+		if val is None:
+			del self.variables[var_name]
+		else:
+			self.variables[var_name] = val
 
 	def evaluate_expression(self, expression_node):
 		if self.trace_output:
@@ -69,9 +72,12 @@ class Interpreter(InterpreterBase):
 				super().error(ErrorType.NAME_ERROR, f"Variable {var_name} has not been defined")
 			return self.evaluate_expression(self.variables[var_name])
 		elif expression_node.elem_type == "fcall":
+			if expression_node.get("name") != "inputi":
+				super().error(ErrorType.NAME_ERROR, f"Only inputi() function calls are supported within expressions")
 			return self.do_function_call(expression_node)
 		else:
-			super().error(ErrorType.TYPE_ERROR, "Unknown expression type: {}".format(expression_node.elem_type))
+			return None
+			#super().error(ErrorType.TYPE_ERROR, "Unknown expression type: {}".format(expression_node.elem_type))
 
 	def binary_operation(self, expression_node):
 		op1 = self.evaluate_expression(expression_node.get("op1"))
@@ -89,7 +95,7 @@ class Interpreter(InterpreterBase):
 					difference = op1.get("val") - op2.get("val")
 					return Element(InterpreterBase.INT_DEF, val=difference)
 
-		if op1.elem_type == "str":
+		if op1.elem_type == "string":
 			match expression_node.elem_type:
 				case "+":
 					concat = op1.get("val") + op2.get("val")
@@ -112,7 +118,7 @@ class Interpreter(InterpreterBase):
 			if len(args) > 1:
 				super().error(ErrorType.NAME_ERROR, f"No inputi() function found that takes > 1 parameter")
 			elif len(args) == 1:
-				super().output(args[0].get("val"))
+				super().output(self.evaluate_expression(args[0]).get("val"))
     
 			return Element(InterpreterBase.INT_DEF, val=self.inputi(args))
 
