@@ -5,9 +5,8 @@ def main():
 	# all programs will be provided to your interpreter as a python string, 
 	# just as shown here.
 	program_source = """
-func main() {
-  foo = 5 = 5;
-  print("The answer is: ", 4 + inputi("enter a number: "), "!");
+func main() {   
+  a = b + 5;
 }
 	"""
 	
